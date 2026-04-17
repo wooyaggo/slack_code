@@ -1,0 +1,20 @@
+{
+  "name": "slack-claude-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/start.js",
+    "stop": "node scripts/manage.js stop",
+    "restart": "node scripts/manage.js restart",
+    "logs": "node scripts/manage.js logs",
+    "list": "pm2 list",
+    "dev": "node --watch scripts/dev.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.19.0",
+    "axios": "^1.7.0",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.0.0",
+    "tmp": "^0.2.3"
+  }
+}
