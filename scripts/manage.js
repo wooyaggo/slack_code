@@ -1,19 +1,13 @@
 import { spawn } from 'child_process';
 
 const action = process.argv[2];
-const channelId = process.argv[3];
+const processName = 'slack-code-main';
 
 if (!action) {
-  console.error('사용법: node scripts/manage.js <stop|restart|logs> <channelId>');
+  console.error('사용법: node scripts/manage.js <stop|restart|logs>');
   process.exit(1);
 }
 
-if (!channelId) {
-  console.error('channelId를 지정해야 합니다. 예: npm run logs -- C12345678');
-  process.exit(1);
-}
-
-const processName = `slack-claude-bot-${channelId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 const args = ['logs'].includes(action)
   ? ['logs', processName]
   : [action, processName];

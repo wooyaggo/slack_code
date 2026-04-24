@@ -2,14 +2,17 @@ import { downloadImages, cleanupImages } from './imageHandler.js';
 import { runClaude } from './claudeRunner.js';
 import { deleteSession } from './sessionStore.js';
 import { enqueue } from './messageQueue.js';
+import { getTarget } from './targetStore.js';
 
 const BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
-const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID;
 
 export function registerHandlers(app) {
   // @멘션: 최상위 멘션이면 새 세션 생성, 스레드 안 멘션이면 세션 이어가기
   app.event('app_mention', async ({ event, say, client }) => {
     console.log('[app_mention] 수신:', event.channel, event.text?.slice(0, 50));
+    const target = getTarget(event.channel);
+    if (!target) return;
+
     const isTopLevel = !event.thread_ts;
     // 최상위 @멘션이면 세션 키를 message.ts 기준으로 새로 생성
     const sessionKey = isTopLevel
@@ -18,14 +21,15 @@ export function registerHandlers(app) {
 
     if (isTopLevel) deleteSession(sessionKey); // 항상 새 세션 시작
 
-    enqueue(sessionKey, () => handleMessage({ message: event, sessionKey, say, client }));
+    enqueue(sessionKey, () => handleMessage({ message: event, sessionKey, say, client, target }));
   });
 
   // 채널 메시지 및 스레드 답장 처리
   app.message(async ({ message, say, client }) => {
     if (message.subtype && message.subtype !== 'file_share') return;
     if (message.bot_id) return;
-    if (TARGET_CHANNEL_ID && message.channel !== TARGET_CHANNEL_ID) return;
+    const target = getTarget(message.channel);
+    if (!target) return;
 
     // 최상위 메시지: message.ts 기준 새 세션
     // 스레드 답장: thread_ts 기준 기존 세션 이어가기
@@ -37,11 +41,11 @@ export function registerHandlers(app) {
     if (isTopLevel) deleteSession(sessionKey);
 
     console.log(`[message] ${isTopLevel ? '채널' : '스레드'} 수신:`, message.channel, message.text?.slice(0, 50));
-    enqueue(sessionKey, () => handleMessage({ message, sessionKey, say, client }));
+    enqueue(sessionKey, () => handleMessage({ message, sessionKey, say, client, target }));
   });
 }
 
-async function handleMessage({ message, sessionKey, say, client }) {
+async function handleMessage({ message, sessionKey, say, client, target }) {
   if (message.bot_id) return;
 
   const text = message.text?.trim();
@@ -72,7 +76,9 @@ async function handleMessage({ message, sessionKey, say, client }) {
 
   let reply;
   try {
-    reply = await runClaude(sessionKey, text || '(이미지를 분석해줘)', imagePaths);
+    reply = await runClaude(sessionKey, text || '(이미지를 분석해줘)', imagePaths, {
+      workdir: target.workdir,
+    });
     console.log('[Claude 응답]', reply?.slice(0, 80));
   } catch (err) {
     reply = `오류가 발생했습니다: ${err.message}`;

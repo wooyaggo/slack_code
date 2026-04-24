@@ -3,3 +3,4 @@ sessions.db
 .env
 .codex
 data/*.db
+data/*.json

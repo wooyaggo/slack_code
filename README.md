@@ -30,7 +30,7 @@ npm start
 - `Slack channel ID`
   이 봇이 반응할 채널 ID다.
 
-5. 입력이 끝나면 PM2가 `slack-claude-bot-<channelId>` 이름으로 프로세스를 띄운다.
+5. 입력이 끝나면 `data/targets.json`에 관리 포인트를 저장하고, PM2가 `slack-code-main` 중앙 프로세스를 하나만 띄운다.
 
 예시:
 
@@ -41,18 +41,19 @@ Slack channel ID: C12345678
 
 [start] channel: C12345678
 [start] Claude workdir: /home/user/works/naverse/main/project/client
-[start] PM2 process: slack-claude-bot-C12345678
+[start] target config: /home/user/slack_code/data/targets.json
+[start] PM2 process: slack-code-main
 ```
 
-같은 채널 ID로 다시 `npm start`를 실행하면 새 프로세스를 추가로 만들지 않고 기존 프로세스를 재시작한다. 다른 채널 ID를 입력하면 별도 PM2 프로세스로 동시에 실행할 수 있다.
+같은 채널 ID로 다시 `npm start`를 실행하면 해당 채널의 작업 디렉터리 설정을 갱신한다. 다른 채널 ID를 입력하면 중앙 프로세스는 그대로 두고 관리 포인트만 추가한다. Slack Socket Mode 연결은 `slack-code-main` 프로세스 하나가 유지한다.
 
 ## 운영 명령어
 
 ```bash
 npm run list
-npm run logs -- C12345678
-npm run stop -- C12345678
-npm run restart -- C12345678
+npm run logs
+npm run stop
+npm run restart
 ```
 
 ## 주요 기능
@@ -61,7 +62,7 @@ npm run restart -- C12345678
 - 스레드별 Claude 세션 유지
 - Slack 첨부 이미지 다운로드 후 Claude 분석
 - `npm start` 실행 시 작업 디렉터리와 Slack 채널 ID 입력
-- 채널 ID별 PM2 멀티 인스턴스 실행
+- 단일 PM2 프로세스에서 채널별 작업 디렉터리 라우팅
 - 처리 중 리액션 표시
 
 ## 사전 요구사항
@@ -100,7 +101,8 @@ slack_code/
 │   ├── start.js
 │   └── dev.js
 ├── data/
-│   └── sessions.db
+│   ├── sessions.db
+│   └── targets.json
 ├── .env.example
 └── package.json
 ```
@@ -124,4 +126,9 @@ npm run dev -- ~/works/naverse/main/project/client
 같은 스레드의 후속 메시지
   -> 이전 session_id로 --resume
   -> 1시간 후 세션 만료
+
+npm start
+  -> 채널 ID와 작업 디렉터리를 data/targets.json에 저장
+  -> slack-code-main이 없으면 시작
+  -> 이미 실행 중이면 설정만 갱신
 ```

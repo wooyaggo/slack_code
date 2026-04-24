@@ -4,17 +4,19 @@ import { createInterface } from 'readline/promises';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { getConfigPath, upsertTarget } from '../slack-bot/targetStore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const botEntry = path.join(repoRoot, 'slack-bot', 'index.js');
+const processName = 'slack-code-main';
 
 const { workdir, channelId } = await promptInputs();
-const processName = getProcessName(channelId);
-const sessionDbPath = path.join(repoRoot, 'data', `sessions.${sanitizeSegment(channelId)}.db`);
+const target = upsertTarget({ channelId, workdir });
 
 console.log(`[start] channel: ${channelId}`);
-console.log(`[start] Claude workdir: ${workdir}`);
+console.log(`[start] Claude workdir: ${target.workdir}`);
+console.log(`[start] target config: ${getConfigPath()}`);
 console.log(`[start] PM2 process: ${processName}`);
 
 const sharedOptions = {
@@ -22,15 +24,14 @@ const sharedOptions = {
   stdio: 'inherit',
   env: {
     ...process.env,
-    CLAUDE_WORKDIR: workdir,
-    TARGET_CHANNEL_ID: channelId,
-    SESSION_DB_PATH: sessionDbPath,
   },
 };
 
 try {
-  const restarted = await runPm2(['restart', processName, '--update-env']);
-  if (!restarted) {
+  const described = await runPm2(['describe', processName]);
+  if (described) {
+    console.log('[start] 중앙 봇 프로세스가 이미 실행 중입니다. 설정만 갱신했습니다.');
+  } else {
     await runPm2([
       'start',
       botEntry,
@@ -93,14 +94,6 @@ function resolveWorkdir(input) {
   if (input === '~') return os.homedir();
   if (input.startsWith('~/')) return path.join(os.homedir(), input.slice(2));
   return path.resolve(input);
-}
-
-function getProcessName(channelId) {
-  return `slack-claude-bot-${sanitizeSegment(channelId)}`;
-}
-
-function sanitizeSegment(value) {
-  return value.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
 function runPm2(args, required = false) {

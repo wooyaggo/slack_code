@@ -2,6 +2,7 @@ import 'dotenv/config';
 import pkg from '@slack/bolt';
 const { App } = pkg;
 import { registerHandlers } from './slackHandler.js';
+import { getConfigPath, listTargets } from './targetStore.js';
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -22,6 +23,13 @@ registerHandlers(app);
 (async () => {
   await app.start();
   console.log(`Slack Claude Bot 시작됨 (Socket Mode)`);
-  console.log(`대상 채널: ${process.env.TARGET_CHANNEL_ID || '전체'}`);
-  console.log(`Claude 작업 디렉터리: ${process.env.CLAUDE_WORKDIR || process.cwd()}`);
+  console.log(`대상 설정: ${getConfigPath()}`);
+  const targets = listTargets();
+  if (targets.length === 0) {
+    console.log('등록된 관리 포인트가 없습니다. npm start로 채널과 작업 디렉터리를 추가하세요.');
+  } else {
+    for (const target of targets) {
+      console.log(`관리 포인트: ${target.channelId} -> ${target.workdir}`);
+    }
+  }
 })();

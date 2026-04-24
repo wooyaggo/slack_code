@@ -7,12 +7,14 @@ import { getSession, setSession, touchSession } from './sessionStore.js';
  * @param {string} sessionKey   - 세션 식별자 (channelId 또는 channelId:threadTs)
  * @param {string} prompt       - 사용자 메시지
  * @param {string[]} imagePaths - 첨부 이미지 경로 목록
+ * @param {{ workdir?: string }} options - 채널별 실행 옵션
  * @returns {Promise<string>}   - Claude 응답 텍스트
  */
-export async function runClaude(sessionKey, prompt, imagePaths = []) {
+export async function runClaude(sessionKey, prompt, imagePaths = [], options = {}) {
+  const workdir = getClaudeWorkdir(options.workdir);
   const existingSessionId = getSession(sessionKey);
-  const { args } = buildArgs(existingSessionId, prompt, imagePaths);
-  const stdout = await spawnClaude(args);
+  const { args } = buildArgs(existingSessionId, prompt, imagePaths, workdir);
+  const stdout = await spawnClaude(args, workdir);
 
   const result = parseOutput(stdout);
 
@@ -25,9 +27,8 @@ export async function runClaude(sessionKey, prompt, imagePaths = []) {
   return result.text;
 }
 
-function spawnClaude(args) {
+function spawnClaude(args, workdir) {
   return new Promise((resolve, reject) => {
-    const workdir = getClaudeWorkdir();
     const proc = spawn('claude', args, {
       cwd: workdir,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -71,8 +72,7 @@ You are a Slack bot assistant. Rules:
 - Always respond in the same language the user used.
 `.trim();
 
-function buildArgs(sessionId, prompt, imagePaths) {
-  const workdir = getClaudeWorkdir();
+function buildArgs(sessionId, prompt, imagePaths, workdir) {
   let fullPrompt = prompt;
 
   if (imagePaths.length > 0) {
@@ -124,6 +124,6 @@ function parseOutput(raw) {
   return { text: raw.trim(), sessionId: null };
 }
 
-function getClaudeWorkdir() {
-  return path.resolve(process.env.CLAUDE_WORKDIR || process.cwd());
+function getClaudeWorkdir(workdir) {
+  return path.resolve(workdir || process.env.CLAUDE_WORKDIR || process.cwd());
 }
