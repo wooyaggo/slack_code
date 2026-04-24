@@ -46,7 +46,7 @@ npm run restart
 
 ## 메모
 
-- `npm start` 실행 시 작업 디렉터리와 Slack 채널 ID를 입력받는다.
+- `npm start` 실행 시 작업 디렉터리와 Slack 채널 ID 또는 이름을 입력받는다.
 - 각 채널은 `data/targets.json`에 관리 포인트로 저장된다.
 - Slack Socket Mode 클라이언트는 `slack-code-main` PM2 프로세스 하나만 유지한다.
 - 세션은 스레드 기준으로 유지되며 1시간 후 만료된다.

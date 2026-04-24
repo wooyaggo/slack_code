@@ -40,9 +40,9 @@ npm run dev -- ~/works/naverse/main/project/client
 `npm start`는 실행 시 다음 값을 입력받는다.
 
 1. Claude 작업 디렉터리
-2. Slack 채널 ID
+2. Slack 채널 ID 또는 이름
 
-채널별 작업 디렉터리는 `data/targets.json`에 관리 포인트로 저장된다.
+채널명은 Slack API로 ID를 조회한 뒤, 채널별 작업 디렉터리는 `data/targets.json`에 관리 포인트로 저장된다.
 Slack Socket Mode 연결은 `slack-code-main` PM2 프로세스 하나만 유지하고, 채널별 메시지는 저장된 설정으로 라우팅한다.
 
 ## 동작 방식

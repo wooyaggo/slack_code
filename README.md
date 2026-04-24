@@ -27,8 +27,8 @@ npm start
 
 - `Working directory`
   Claude가 실제로 작업할 프로젝트 경로다.
-- `Slack channel ID`
-  이 봇이 반응할 채널 ID다.
+- `Slack channel ID or name`
+  이 봇이 반응할 채널 ID 또는 채널명이다. 채널명은 `general` 또는 `#general` 형식으로 입력할 수 있다.
 
 5. 입력이 끝나면 `data/targets.json`에 관리 포인트를 저장하고, PM2가 `slack-code-main` 중앙 프로세스를 하나만 띄운다.
 
@@ -37,15 +37,15 @@ npm start
 ```text
 $ npm start
 Working directory [/home/user/slack_code]: ~/works/naverse/main/project/client
-Slack channel ID: C12345678
+Slack channel ID or name: #project
 
-[start] channel: C12345678
+[start] channel: #project (C12345678)
 [start] Claude workdir: /home/user/works/naverse/main/project/client
 [start] target config: /home/user/slack_code/data/targets.json
 [start] PM2 process: slack-code-main
 ```
 
-같은 채널 ID로 다시 `npm start`를 실행하면 해당 채널의 작업 디렉터리 설정을 갱신한다. 다른 채널 ID를 입력하면 중앙 프로세스는 그대로 두고 관리 포인트만 추가한다. Slack Socket Mode 연결은 `slack-code-main` 프로세스 하나가 유지한다.
+같은 채널로 다시 `npm start`를 실행하면 해당 채널의 작업 디렉터리 설정을 갱신한다. 다른 채널을 입력하면 중앙 프로세스는 그대로 두고 관리 포인트만 추가한다. Slack Socket Mode 연결은 `slack-code-main` 프로세스 하나가 유지한다.
 
 ## 운영 명령어
 
@@ -61,7 +61,7 @@ npm run restart
 - 채널 메시지와 스레드 대화 지원
 - 스레드별 Claude 세션 유지
 - Slack 첨부 이미지 다운로드 후 Claude 분석
-- `npm start` 실행 시 작업 디렉터리와 Slack 채널 ID 입력
+- `npm start` 실행 시 작업 디렉터리와 Slack 채널 ID 또는 이름 입력
 - 단일 PM2 프로세스에서 채널별 작업 디렉터리 라우팅
 - 처리 중 리액션 표시
 
@@ -81,7 +81,8 @@ npm run restart
 
 ## Slack 앱 설정
 
-- Bot scopes: `app_mentions:read`, `channels:history`, `chat:write`, `files:read`, `reactions:write`
+- Bot scopes: `app_mentions:read`, `channels:history`, `channels:read`, `chat:write`, `files:read`, `reactions:write`
+- Private channel names also require `groups:read`.
 - Bot events: `app_mention`, `message.channels`, `message.groups`
 - Socket Mode 활성화
 - App-level token scope: `connections:write`
@@ -128,6 +129,8 @@ npm run dev -- ~/works/naverse/main/project/client
   -> 1시간 후 세션 만료
 
 npm start
+  -> 채널 ID 또는 이름과 작업 디렉터리를 입력받음
+  -> 채널명은 Slack API로 ID를 조회
   -> 채널 ID와 작업 디렉터리를 data/targets.json에 저장
   -> slack-code-main이 없으면 시작
   -> 이미 실행 중이면 설정만 갱신
